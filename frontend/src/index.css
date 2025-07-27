@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  /* background: linear-gradient(to bottom, #FFF7ED, #FFF7ED);	; */
+  /*font-family: 'General Sans', sans-serif;*/
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+}
