@@ -1,13 +1,18 @@
 import React from 'react'
 
-const SummaryCard = () => {
+const SummaryCard = ({data}) => {
+
+  if (!data) return <div>The data is loading....</div>
+
+
+
   return (
     <div className='grid gap-4 md:grid-cols-3'>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">
         <p className='text-sm text-neutral-dark/70'>Average BP</p>
         <p className="mt-1 text-2xl font-bold text-neutral-dark">
-          name1
+          {data.avg_bp ? `${data.avg_bp.systolic}/${data.avg_bp.diastolic}` : '-'}
         </p>
       </div>
 
@@ -15,35 +20,35 @@ const SummaryCard = () => {
       <div className='bg-white rounded-2xl shadow-soft p-4'>
         <p className='text-sm text-neutral-dark/70'>Max HR (7d)</p>
         <p className="mt-1 text-2xl font-bold text-neutral-dark">
-          <p className='text-base font-medium'>name 2</p>
+          <p className='text-base font-medium'>{data.max_hr ?? "--"} bpm</p>
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">
         <p className="text-sm text-neutral-dark/70">Avg Temp (7d)</p>
         <p className="mt-1 text-2xl font-bold text-neutral-dark inline-flex items-center">
-          name3
+          {data.avg_temp ?? "--"} °F {data.temp_trend === 'up' ? "↑" : data.temp_trend === 'down' ? "↓" : ""} 
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">
         <p className="text-sm text-neutral-dark/70">Entries this week</p>
         <p className="mt-1 text-2xl font-bold text-neutral-dark">
-            name4 
+            {data.entries_this_week}
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">
         <p className="text-sm text-neutral-dark/70">Last entry</p>
         <p className="mt-1 text-2xl font-bold text-neutral-dark">
-          name5
+           {data.last_entry_at ? new Date(data.last_entry_at).toLocaleDateString() : "—"}
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">
         <p className="text-sm text-neutral-dark/70">Flagged entries</p>
         <p className={`mt-1 text-2xl font-bold `}>
-          name5
+          {data.flagged_entries ?? 0}
         </p>
       </div>
     </div>

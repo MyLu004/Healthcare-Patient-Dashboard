@@ -2,7 +2,7 @@ from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models
-from routers import user, auth
+from routers import user, auth, trends, recent, summary, vitals
 
 
 app = FastAPI()
@@ -25,6 +25,10 @@ app.add_middleware(
 
 app.include_router(user.router)  # Include user-related routes
 app.include_router(auth.router)  # Include authentication-related routes
+app.include_router(vitals.router)
+app.include_router(summary.router)
+app.include_router(trends.router)
+app.include_router(recent.router)
 
 
 @app.get("/") 

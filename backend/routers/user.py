@@ -41,7 +41,7 @@ def get_user(id: int, db: Session = Depends(get_db)):
 #create a new user
 @router.post("/", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    print("here!")
+    #print("here!")
     #hashing the password
     hashed_password = hasing.hash_password(user.password)  #hash the password using bcrypt
     user.password = hashed_password 

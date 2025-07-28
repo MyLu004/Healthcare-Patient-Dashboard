@@ -2,9 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-* {
-  scroll-behavior: smooth;
-}
+
+
 
 body {
   @apply font-sans bg-neutral-light text-neutral-dark antialiased;
