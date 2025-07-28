@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 
-from . import models,schemas,database
+import models,schemas,database
 from fastapi import HTTPException, status, Depends
 
 from fastapi.security import OAuth2PasswordBearer
@@ -16,9 +16,9 @@ import os
 load_dotenv()
 
 # Enviroment variables for JWT configuration
-JWT_SECRET= os.getenv("JWT_SECRET")
+JWT_SECRET= os.getenv("JWT_SECRET_KEY")
 JWT_ALGORITHM=os.getenv("JWT_ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES=os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+ACCESS_TOKEN_EXPIRE_MINUTES=os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES")
 
 # define the OAuthu2 password flow, expecting token to be sent to the login or other funciton need it URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")

@@ -14,6 +14,7 @@ class User(Base):
     password = Column(String, nullable=False)  #define the password column as a string and not nullable
     create_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)  #define the create_at column as a timestamp with a default value of the current time
 
+    vitals = relationship("Vital", back_populates="user")
 
 class Vital(Base):
     __tablename__ = "vitals"

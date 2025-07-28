@@ -1,19 +1,25 @@
-import React from 'react';
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Dashboard from "./pages/dashboard.jsx";
-import Login from "./pages/login.jsx";
-import Profile from "./pages/profile.jsx";
 
+//import pages
+import Login from "./pages/login"
+import Dashboard from './pages/dashboard';
+import Signup from './pages/signup';
 
 const App = () => {
   return (
-    <main className='max-w-7xl mx-auto relative'>
-      <Dashboard />
-      {/* <Login />
-      <Profile /> */}
+    <Router>
+      <Routes>
+        <Route path="/" element={<Login/>} />
+        <Route path="/signup" element={<Signup/>} />
+        <Route path="/dashboard" element={<Dashboard/>} />
+        
 
-    </main>
-  );
-};
+      </Routes>
 
-export default App;
+    </Router>
+  )
+}
+
+export default App

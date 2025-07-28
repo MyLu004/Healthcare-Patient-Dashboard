@@ -2,7 +2,7 @@ from fastapi import FastAPI, Response, status, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 import models
-from routers import user
+from routers import user, auth
 
 
 app = FastAPI()
@@ -22,6 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+app.include_router(user.router)  # Include user-related routes
+app.include_router(auth.router)  # Include authentication-related routes
 
 
 @app.get("/") 

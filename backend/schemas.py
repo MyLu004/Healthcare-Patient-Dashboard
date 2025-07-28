@@ -9,6 +9,7 @@ from typing import Optional
 class UserBase(BaseModel):
     email: EmailStr
     password: str
+    username: str
 
 class UserCreate(UserBase):
     pass
@@ -16,6 +17,7 @@ class UserCreate(UserBase):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    username : str
     create_at: datetime  #using str for datetime, can be changed to datetime if needed
 
     class Config:

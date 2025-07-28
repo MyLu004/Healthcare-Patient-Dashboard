@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status, APIRouter
 
-from .. import models, schemas
+import models, schemas
 
 #from ..utils.hasing import hash_password, verify_password
 
-from ..utils import hasing
+from utils import hasing
 
 
 
 from sqlalchemy.orm import Session
 
-from ..database import get_db
+from database import get_db
 from typing import List
 
 

@@ -8,9 +8,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 
 #import database and other utils for authencation 
-from ..database import get_db
-from .. import models, schemas, oauth2
-from ..utils import hasing
+from database import get_db
+import models, schemas, oauth2
+from utils import hasing
 
 #create routes instance for authentication related routes
 router = APIRouter(
