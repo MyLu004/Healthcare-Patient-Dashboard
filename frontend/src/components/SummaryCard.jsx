@@ -2,7 +2,7 @@ import React from 'react'
 
 const SummaryCard = () => {
   return (
-    <div className='grid gap-4 md:grid-cols-3 bg-blue-200 '>
+    <div className='grid gap-4 md:grid-cols-3'>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">
         <p className='text-sm text-neutral-dark/70'>Average BP</p>
