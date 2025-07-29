@@ -20,7 +20,11 @@ function Login() {
       }),
     });
 
+   
+
     const data = await res.json();
+
+     localStorage.setItem("username", data.username);
 
     if (res.ok) {
       const token = data.access_token;

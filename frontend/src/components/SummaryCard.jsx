@@ -4,6 +4,7 @@ const SummaryCard = ({data}) => {
 
   if (!data) return <div>The data is loading....</div>
 
+  console.log("Rendering SummaryCard with data:", data);
 
 
   return (
