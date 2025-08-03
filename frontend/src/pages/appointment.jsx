@@ -2,6 +2,10 @@ import { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+
+// sample data for appointments
+// TODO :  future improve - replace with real API calls
+// or a more complex state management solution
 const fakeAppointments = [
   {
     id: 1,
@@ -21,34 +25,46 @@ const fakeAppointments = [
   },
 ];
 
+
+// -- MAIN APPOINTMENT COMPONENT --
+// Displays upcoming appointments and allows users to request new ones
 export default function Appointment() {
+    // state to hold appointments and form data
   const [appointments, setAppointments] = useState(fakeAppointments);
   const [form, setForm] = useState({
     title: "",
-    date: null, // now a Date object
+    date: null, //Date object
     doctor: "",
     location: "",
     notes: "",
   });
+
+  // state to show/hide the new appointment form
   const [showForm, setShowForm] = useState(false);
 
+
+  // handle inpit changes for text fields
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  // DatePicker change
+  // DatePicker change for Data object in form
   function handleDateChange(date) {
     setForm({ ...form, date });
   }
 
+    // handle form submission to add a new appointment
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.title || !form.date || !form.doctor || !form.location) {
       alert("Please fill in all required fields.");
       return;
     }
+    //else, add the new appointment to the list
+    // "Create a new array with all the previous appointments, and add the new appointment object at the end."
     setAppointments([
       ...appointments,
+      // new appointment object with formatted date
       {
         ...form,
         id: Date.now(),
@@ -61,6 +77,9 @@ export default function Appointment() {
         }), // format for display
       },
     ]);
+
+    // reset form fields after submission
+    // "Reset the form state to its initial values."
     setForm({
       title: "",
       date: null,
@@ -68,6 +87,8 @@ export default function Appointment() {
       location: "",
       notes: "",
     });
+
+    // showForm : boolean state to hide the form after submission
     setShowForm(false);
   }
 
@@ -76,8 +97,11 @@ export default function Appointment() {
       <h2 className="text-3xl font-bold mb-6">Upcoming Appointments</h2>
       <button
         className="bg-teal-600 text-white px-4 py-2 rounded-lg mb-4"
+
+        // setShowForm to toggle the appointment request form [default: false]
         onClick={() => setShowForm((f) => !f)}
       >
+        {/* if true: show cancel, else: request appointment [false] */}
         {showForm ? "Cancel" : "+ Request Appointment"}
       </button>
 
@@ -104,6 +128,8 @@ export default function Appointment() {
               Date & Time<span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-5">
+
+                {/* DatePicker for selecting date and time */}
               <DatePicker
                 selected={form.date}
                 onChange={handleDateChange}
@@ -115,7 +141,7 @@ export default function Appointment() {
                 required
                 popperPlacement="right-start"
               />
-              {/* Optional: calendar icon */}
+              {/* calendar icon */}
               <svg xmlns="http://www.w3.org/2000/svg" width={24} height={24} className="text-gray-400">
                 <path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2m0 16H5V9h14zm0-11H5V6h14z"/>
               </svg>
@@ -145,7 +171,7 @@ export default function Appointment() {
             />
           </div>
           <div>
-            <label className="block font-medium mb-1">Notes</label>
+            <label className="block font-medium mb-1">Notes [Optional]</label>
             <textarea
               name="notes"
               value={form.notes}

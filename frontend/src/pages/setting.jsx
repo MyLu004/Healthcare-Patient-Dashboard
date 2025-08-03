@@ -25,7 +25,7 @@ const Settings = () => {
       return;
     }
 
-    // 🔐 OPTIONAL: implement your backend route and token auth here
+    // backend route and token auth 
     const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
     const res = await fetch("http://localhost:8000/users/change-password", {
       method: "POST",

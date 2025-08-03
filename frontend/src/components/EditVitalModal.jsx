@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
 
+
+// model for editing vital sign entries
 export default function EditVitalModal({ open, onClose, initial, onSave }) {
+  // state to hold the form data
   const [form, setForm] = useState(null);
 
+  // effect to set initial form data when modal opens
   useEffect(() => {
     if (initial) {
       setForm(initial);
