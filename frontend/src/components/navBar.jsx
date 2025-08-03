@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { MdHealthAndSafety } from "react-icons/md";
+
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef();
