@@ -36,7 +36,7 @@ function Login() {
       }
 
       localStorage.setItem("userEmail", data.email);
-      window.location.href = "/dashboard";
+      window.location.href = "/mainDashboard"; // Redirect to main dashboard
     } else {
       alert("Login failed: " + data.detail);
     }

@@ -4,7 +4,8 @@ import EntryTable from "../components/EntryTable";
 import VitalChart from "../components/VitalChart";
 import NewEntryForm from "../components/NewEntryForm"; // if you added it
 import EditVitalModal from "../components/EditVitalModal";
-import Navbar from "../components/NavBar";
+
+import { Link } from "react-router-dom";
 import {
   fetchSummary,
   fetchTrends,
@@ -20,6 +21,8 @@ export default function Dashboard() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+
+ 
 
   const reloadData = async () => {
     const summaryData = await fetchSummary();
@@ -78,8 +81,11 @@ export default function Dashboard() {
 
   return (
     <div >
-      <Navbar />
+      
+
       <div className="p-6 space-y-6">
+        
+
         <NewEntryForm onSuccess={reloadData} />
 
         <SummaryCard data={summary} />

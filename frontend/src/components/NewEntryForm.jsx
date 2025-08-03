@@ -37,12 +37,12 @@ const NewEntryForm = ({ onSuccess }) => {
       };
 
       await postVital(payload);
-      setMessage("✅ Entry added!");
+      setMessage("Entry added!");
       setForm(defaultEntry);
       if (onSuccess) onSuccess(); // Refresh dashboard
     } catch (err) {
         console.error("Failed to add entry:", err);
-      setMessage("❌ Failed to add entry.");
+      setMessage("Failed to add entry.");
     } finally {
       setLoading(false);
     }

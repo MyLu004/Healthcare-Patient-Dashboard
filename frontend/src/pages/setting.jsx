@@ -21,7 +21,7 @@ const Settings = () => {
     setMessage("");
 
     if (newPassword !== confirmPassword) {
-      setMessage("❌ Passwords do not match");
+      setMessage("Passwords do not match");
       return;
     }
 
@@ -37,59 +37,80 @@ const Settings = () => {
     });
 
     if (res.ok) {
-      setMessage("✅ Password updated successfully");
+      setMessage("Password updated successfully");
       setNewPassword("");
       setConfirmPassword("");
     } else {
       const data = await res.json();
-      setMessage("❌ Error: " + (data.detail || "Failed to change password"));
+      setMessage("Error: " + (data.detail || "Failed to change password"));
     }
   };
 
+  // Handler for navigating back to dashboard
+  const handleGoBack = () => {
+    navigate("/mainDashboard"); // Change to your actual dashboard route if different
+  };
+
   return (
-    <div className="max-w-xl mx-auto mt-12 bg-white shadow-md rounded-2xl p-8">
-      <h2 className="text-2xl font-bold text-teal-700 mb-4">Account Settings</h2>
-
-      <div className="mb-6 space-y-1">
-        <p><span className="font-semibold">Username:</span> {username}</p>
-        <p><span className="font-semibold">Email:</span> {email}</p>
-      </div>
-
-      <form onSubmit={handleChangePassword} className="space-y-4 mb-6">
-        <h3 className="text-lg font-semibold text-gray-700">Change Password</h3>
-        <input
-          type="password"
-          placeholder="New Password"
-          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Confirm New Password"
-          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="flex items-center justify-between py-5 px-5 bg-teal-700 shadow">
+        <h2 className="text-3xl font-bold text-white">Account Settings</h2>
         <button
-          type="submit"
-          className="w-full bg-teal-500 text-white py-2 rounded-lg hover:bg-teal-600 transition"
+          onClick={handleGoBack}
+          className="border border-teal-600 bg-white text-teal-700 hover:bg-teal-50 font-medium px-4 py-1.5 rounded-lg transition"
         >
-          Update Password
+          ← Back to Dashboard
         </button>
-        {message && <p className="text-sm text-center text-red-600">{message}</p>}
-      </form>
+      </header>
+      <main className="flex-1 px-8 py-10 max-w-2xl w-full mx-auto">
+        <div className="flex justify-end mb-4">
+          
+        </div>
 
-      <hr className="my-4" />
+        <section className="mb-10">
+          <h3 className="text-xl font-semibold mb-4 text-teal-700">Profile</h3>
+          <div className="bg-white rounded-xl shadow p-6 space-y-2">
+            <p><span className="font-semibold">Username:</span> {username}</p>
+            <p><span className="font-semibold">Email:</span> {email}</p>
+          </div>
+        </section>
 
-      <button
-        onClick={handleLogout}
-        className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition"
-      >
-        Log Out
-      </button>
+        <section className="mb-10">
+          <h3 className="text-xl font-semibold mb-4 text-teal-700">Change Password</h3>
+          <form onSubmit={handleChangePassword} className="bg-white rounded-xl shadow p-6 space-y-4">
+            <input
+              type="password"
+              placeholder="New Password"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Confirm New Password"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <button
+              type="submit"
+              className="w-full bg-teal-500 text-white py-2 rounded-lg hover:bg-teal-600 transition"
+            >
+              Update Password
+            </button>
+            {message && <p className="text-sm text-center text-red-600">{message}</p>}
+          </form>
+        </section>
+
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition font-medium"
+        >
+          Log Out
+        </button>
+      </main>
     </div>
   );
 };

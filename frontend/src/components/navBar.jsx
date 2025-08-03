@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-
+import { MdHealthAndSafety } from "react-icons/md";
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef();
@@ -29,7 +29,11 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-soft px-6 py-3 flex justify-between items-center">
       {/* App title */}
-      <h1 className="text-xl font-semibold text-neutral-dark">Health Dashboard</h1>
+      <div className="flex items-center gap-2">
+        <MdHealthAndSafety size={25} color="rgb(56 178 172)" />
+        <h1 className="text-xl font-semibold text-neutral-dark">Health Dashboard</h1>
+      </div>
+      
 
       {/* Right side: username + profile */}
       <div className="relative flex items-center gap-2" ref={dropdownRef}>
