@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000"; // or your deployed backend URL
+const BASE_URL =import.meta.env.VITE_API_URL;; // or your deployed backend URL
 
 export async function fetchSummary(userId = 1) {
   const res = await fetch(`${BASE_URL}/vitals/summary?user_id=${userId}`);
