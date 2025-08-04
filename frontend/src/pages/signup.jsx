@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserPlus } from "react-icons/fa"; // Healthcare-friendly icon
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 function Signup() {
   const [email, setEmail] = useState("");
@@ -30,7 +31,8 @@ function Signup() {
       return;
     }
 
-    const res = await fetch("http://localhost:8000/users", {
+    //const res = await fetch("http://localhost:8000/users", {
+    const res = await fetch(`${BASE_URL}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, username }),

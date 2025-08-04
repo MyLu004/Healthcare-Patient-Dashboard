@@ -20,6 +20,7 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // handle form submission: validatee, convert values, and call teh onSave callback
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
@@ -33,11 +34,15 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
     });
   };
 
+
+  // render modal overlay and form
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-lg">
         <h3 className="text-lg font-semibold mb-4">Edit Vital</h3>
         <form onSubmit={handleSubmit} className="space-y-3">
+
+           {/* Date and time picker */}
           <input
             type="datetime-local"
             name="recorded_at"
@@ -46,6 +51,8 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
             className="w-full border rounded-lg px-3 py-2"
             required
           />
+
+          {/* Blood pressure fields, side-by-side */}
           <div className="grid grid-cols-2 gap-2">
             <input
               type="number"
@@ -64,6 +71,8 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
               className="border rounded-lg px-3 py-2"
             />
           </div>
+
+           {/* Heart rate input */}
           <input
             type="number"
             name="heart_rate"
@@ -72,6 +81,8 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
             onChange={handleChange}
             className="w-full border rounded-lg px-3 py-2"
           />
+
+          {/* Temperature input */}
           <input
             type="number"
             step="0.1"
@@ -81,6 +92,8 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
             onChange={handleChange}
             className="w-full border rounded-lg px-3 py-2"
           />
+
+          {/* Glucose input */}
           <input
             type="number"
             step="0.1"
@@ -90,6 +103,8 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
             onChange={handleChange}
             className="w-full border rounded-lg px-3 py-2"
           />
+
+          {/* Notes textarea */}
           <textarea
             name="notes"
             placeholder="Notes"
@@ -97,6 +112,8 @@ export default function EditVitalModal({ open, onClose, initial, onSave }) {
             onChange={handleChange}
             className="w-full border rounded-lg px-3 py-2"
           />
+
+           {/* Form action buttons: Cancel and Save */}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
