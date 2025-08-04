@@ -20,9 +20,9 @@ const SummaryCard = ({data}) => {
 
       <div className='bg-white rounded-2xl shadow-soft p-4'>
         <p className='text-sm text-neutral-dark/70'>Max HR (7d)</p>
-        <p className="mt-1 text-2xl font-bold text-neutral-dark">
+        <div className="mt-1 text-2xl font-bold text-neutral-dark">
           <p className='text-base font-medium'>{data.max_hr ?? "--"} bpm</p>
-        </p>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-soft p-4">

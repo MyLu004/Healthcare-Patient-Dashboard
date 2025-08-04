@@ -14,16 +14,19 @@ import {
   deleteVital,
 } from "../lib/api";
 
+
+// Dashboard page: Main health dashboard for the authenticated user
 export default function Dashboard() {
+  // Store summary stats, trends, and recent entries for display
   const [summary, setSummary] = useState(null);
   const [trends, setTrends] = useState([]);
   const [recent, setRecent] = useState([]);
 
+  // State for edit modal (open/closed) and currently editing entry
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
- 
-
+  // Reload all dashboard data (summary, trends, recent) from backend
   const reloadData = async () => {
     const summaryData = await fetchSummary();
     const trendData = await fetchTrends();
@@ -32,17 +35,19 @@ export default function Dashboard() {
     setSummary(summaryData);
     setTrends(trendData.points || []);
 
-    // Normalize entry format for EntryTable
+    // Normalize recent entries for EntryTable compatibility
     const formattedRecent = recentData.items || recentData;
 
-  setRecent(formattedRecent);
+    setRecent(Array.isArray(formattedRecent) ? formattedRecent : []);
 };
+
+  // Load dashboard data on component mount
   useEffect(() => {
     reloadData();
   }, []);
 
+  // Handle edit button in EntryTable: open modal and pre-fill fields
   const handleEdit = (row) => {
-    // shape frontend row -> modal expects VitalsUpdate-like fields
     setEditing({
       id: row.id,
       recorded_at: row.date ?? row.recorded_at,
@@ -56,9 +61,10 @@ export default function Dashboard() {
     setEditOpen(true);
   };
 
+  // Save changes to an edited entry (calls backend, closes modal, reloads data)
   const handleSaveEdit = async (payload) => {
     try {
-      await updateVital(editing.id, payload, 1);
+      await updateVital(editing.id, payload);
       setEditOpen(false);
       setEditing(null);
       await reloadData();
@@ -68,10 +74,11 @@ export default function Dashboard() {
     }
   };
 
+  // Delete a recent entry (asks for confirmation, then reloads data)
   const handleDelete = async (id) => {
     if (!confirm("Delete this entry?")) return;
     try {
-      await deleteVital(id, 1);
+      await deleteVital(id);
       await reloadData();
     } catch (e) {
       console.error(e);
@@ -79,19 +86,23 @@ export default function Dashboard() {
     }
   };
 
+  // Main dashboard layout
   return (
     <div >
-      
-
       <div className="p-6 space-y-6">
-        
-
+        {/* Form for adding new vitals */}
         <NewEntryForm onSuccess={reloadData} />
 
+        {/* Dashboard summary cards */}
         <SummaryCard data={summary} />
+
+        {/* Chart of vitals over time */}
         <VitalChart data={trends} />
+
+        {/* Recent entries table with edit/delete actions */}
         <EntryTable data={recent} onEdit={handleEdit} onDelete={handleDelete} />
 
+        {/* Edit modal for modifying an existing entry */}
         <EditVitalModal
           open={editOpen}
           initial={editing}
