@@ -16,11 +16,12 @@ A modern web-based dashboard for tracking and visualizing patient vital signs, d
 
 - Dashboard
 <img width="1841" height="733" alt="Image" src="https://github.com/user-attachments/assets/5146514a-3428-48d7-bd4f-8dce89f247fb" />
-<img width="1852" height="489" alt="Image" src="https://github.com/user-attachments/assets/1e231e32-c699-4d6e-8518-ebab8a8ddf74" />
+<img width="1795" height="842" alt="Image" src="https://github.com/user-attachments/assets/42030a97-3189-4257-9425-ee04ad6f8ff1" />
+
 
 
 - Appointment
-<img width="1795" height="842" alt="Image" src="https://github.com/user-attachments/assets/42030a97-3189-4257-9425-ee04ad6f8ff1" />
+<img width="1852" height="489" alt="Image" src="https://github.com/user-attachments/assets/1e231e32-c699-4d6e-8518-ebab8a8ddf74" />
 
 - Goal
 <img width="1855" height="771" alt="Image" src="https://github.com/user-attachments/assets/d06f5ed2-0952-4fb7-ba9a-df76697270fa" />
