@@ -4,17 +4,25 @@ from database import get_db
 import models, schemas
 from datetime import datetime
 
+
+# API router for all vitals endpoint
 router = APIRouter(
     prefix="/vitals",
     tags=["Vitals"]
 )
 
+
+# -----------------------------
+# Create a new vital entry
+# -----------------------------
 @router.post("/", response_model=schemas.VitalsOut)
 def create_vital(
-    user_id: int,
-    vital: schemas.VitalsCreate,
-    db: Session = Depends(get_db)
+    user_id: int,                   # the ID of the user for whome the vital is being recoding
+    vital: schemas.VitalsCreate,    # the vitals data sent from the frontend (validate by Pydantic schema)
+    db: Session = Depends(get_db)   # SQLAlchemy session dependency (injected automatically)
 ):
+    # create the instance for vital to add into the database later
+    # instance will all relevant fields
     db_vital = models.Vital(
         user_id=user_id,
         recorded_at=vital.recorded_at,
@@ -26,23 +34,30 @@ def create_vital(
         notes=vital.notes,
         created_at=datetime.utcnow()
     )
-    db.add(db_vital)
-    db.commit()
-    db.refresh(db_vital)
-    return db_vital
 
+    db.add(db_vital)        # add new obj to the database session
+    db.commit()             # commit the command
+    db.refresh(db_vital)    # refresh the database / update
+    return db_vital         # return the object/instance
 
+# -----------------------------
+# Update an existing vital entry
+# -----------------------------
 @router.put("/{vital_id}", response_model=schemas.VitalsOut)
 def update_vital(
     vital_id: int,
     user_id: int = Query(..., description="TEMP: pass current user id until auth is wired"),
     payload: schemas.VitalUpdate = Body(...),
     db: Session = Depends(get_db),
-):
+):  
+    # Fetch the target vital entry by ID from the database
     v = db.query(models.Vital).filter(models.Vital.id == vital_id).first()
+
+    # If not found or the user doesn't own this entry, raise 404
     if not v or v.user_id != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vital not found")
 
+     # Update only the fields that were sent (exclude_unset=True ignores fields not provided)
     for field, value in payload.dict(exclude_unset=True).items():
         setattr(v, field, value)
 
@@ -50,14 +65,19 @@ def update_vital(
     db.refresh(v)
     return v
 
-
+# -----------------------------
+# Delete an existing vital entry
+# -----------------------------
 @router.delete("/{vital_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_vital(
     vital_id: int,
     user_id: int = Query(...),
     db: Session = Depends(get_db),
-):
+):  
+    # Fetch the vital entry by ID
     v = db.query(models.Vital).filter(models.Vital.id == vital_id).first()
+
+    # If not found or the user doesn't own this entry, raise 404
     if not v or v.user_id != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vital not found")
 

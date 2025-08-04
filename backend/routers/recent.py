@@ -1,17 +1,23 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-import models, schemas
+import models, schemas, oauth2
 from database import get_db
 
+# API router
 router = APIRouter(prefix="/vitals", tags=["recent"])
 
+# GET /vitals/recent endpoint
+# Returns the most recent vitals entries for a user
 @router.get("/recent", response_model=schemas.RecentResponse)
 def get_recent(
-    user_id: int = Query(1),
+    current_user: models.User = Depends(oauth2.get_current_user),
     limit: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
+    user_id = current_user.id
+
+     # Query the latest 'limit' vitals for the specified user, ordered by recorded date (most recent first)
     rows = (
         db.query(models.Vital)
         .filter(models.Vital.user_id == user_id)
@@ -20,6 +26,7 @@ def get_recent(
         .all()
     )
 
+      # Convert each database record into a RecentEntry schema object for the response
     items = [
         schemas.RecentEntry(
             id=v.id,
@@ -33,4 +40,5 @@ def get_recent(
         for v in rows
     ]
 
+    # return the recent entries wrapped in a RecentResponse schema
     return schemas.RecentResponse(items=items)
