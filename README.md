@@ -104,16 +104,22 @@ Healthcare-Patient-Dashboard/
 │   │   ├── models.py
 │   │   ├── schemas.py
 │   │   ├── database.py
-│   │   ├── api/
+│   │   ├── oauth2.py
+│   │   ├── requirement.txt
+│   │   ├── runtime.txt
+│   │   ├── routers/
 │   │   │   ├── __init__.py
-│   │   │   ├── routes_vitals.py
-│   │   │   └── routes_auth.py
+│   │   │   ├── auth.py
+|   │   │   ├── recent.py
+|   │   │   ├── vitals.py
+|   │   │   ├── trends.py
+|   │   │   └── user.py
 │   │   └── utils/
 │   │       ├── __init__.py
-│   │       └── auth.py
+│   │       └── hasing.py
 │   ├── tests/
 │   │   └── test_main.py
-│   ├── .env.example
+│   ├── .env
 │   ├── requirements.txt
 │   ├── alembic/                 # (optional, if using Alembic for migrations)
 │   └── README.md
