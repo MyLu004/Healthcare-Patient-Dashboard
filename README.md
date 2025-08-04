@@ -1,13 +1,29 @@
-# Healthcare Patient Dashboard
+# 🚑 Healthcare Patient Dashboard
 
 Author: My Lu  
 Date: August 3, 2025
 
 ---
-A modern web dashboard for tracking, visualizing, and managing patient vitals signs. 
+A modern web-based dashboard for tracking and visualizing patient vital signs, designed for healthcare professionals and individuals. The user-friendly interface makes it easy to record, edit, and review daily health metrics like blood pressure, heart rate, and temperature. Interactive charts and summary cards provide clear insights into health trends, supporting early detection of potential issues. Built for accessibility, the dashboard enables efficient data entry, secure storage, and real-time visualization for both clinics and personal use.
 - Demo 
 - Project Report
 - [Live Website](https://healthcare-patient-dashboard.vercel.app)
+---
+## 📷 Demo Pic
+- Could try this account to see the display:
+    - Email : random6@gmail.com
+    - Password : Password123
+
+- Dashboard
+![dashboard1](/images/dashboard_snapshot.png)
+![dashboard2](/images/dashboard_snapshot2.png)
+
+- Appointment
+![appointment](/images/appointment_snapshot.png)
+
+- Goal
+![goal](/images/goal_snapshot.png)
+
 
 ### Features
 - Vital Summary : Quick overview of blood pressure, heart rate, temperature, and more
@@ -19,13 +35,13 @@ A modern web dashboard for tracking, visualizing, and managing patient vitals si
 - PostgreSQL database : Reliable storage for all patient record
 
 
-### Tech Stack
+### 💻 Tech Stack
 - **Frontend**: React, Vite, TailwindCSS  
 - **Backend**: FastAPI, Python  
 - **Database**: PostgreSQL  
 - **Other**: JWT Auth, REST API
 
-## Getting Started
+## 📃 Getting Started
 Prerequisites:
 - Node.js (v18+ recommended)
 - Python (3.10 + recommended)
@@ -76,7 +92,7 @@ Prerequisites:
 
 ---
 
-### Project Structure
+### 📁 Project Structure
 
 ``` pgsql
 Healthcare-Patient-Dashboard/
@@ -170,12 +186,12 @@ Healthcare-Patient-Dashboard/
 - All API requests include the JWT token for authentication.
 - User can log out at any time, which removes their token from local storage and returns them to the login page.
 
-### Tech Flow Recap
+### 📙 Tech Flow Recap
 - Frontend (React): Handles UI, user input, and API calls.
 - Backend (FastAPI): Manages authentication, processes requests, validates data, and communicates with PostgreSQL.
 - Database (PostgreSQL): Stores user accounts and all vitals entries securely.
 
-## Author
+## ✏️ Author
 **My Lu**   
 Intern @ Ontash  
 Email: myluwork004@gmail.com  
