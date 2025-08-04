@@ -15,14 +15,14 @@ A modern web-based dashboard for tracking and visualizing patient vital signs, d
     - Password : Password123
 
 - Dashboard
-![dashboard1](/images/dashboard_snapshot.png)
-![dashboard2](/images/dashboard_snapshot2.png)
+![dashboard1](images/dashboard_snapshot.png)
+![dashboard2](images/dashboard_snapshot2.png)
 
 - Appointment
-![appointment](/images/appointment_snapshot.png)
+![appointment](images/appointment_snapshot.png)
 
 - Goal
-![goal](/images/goal_snapshot.png)
+![goal](images/goal_snapshot.png)
 
 
 ### Features
