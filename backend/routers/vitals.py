@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from sqlalchemy.orm import Session
 from database import get_db
-import models, schemas
+import models, schemas, oauth2
 from datetime import datetime
 
 
@@ -17,14 +17,15 @@ router = APIRouter(
 # -----------------------------
 @router.post("/", response_model=schemas.VitalsOut)
 def create_vital(
-    user_id: int,                   # the ID of the user for whome the vital is being recoding
     vital: schemas.VitalsCreate,    # the vitals data sent from the frontend (validate by Pydantic schema)
+    current_user: models.User = Depends(oauth2.get_current_user),  # the ID of the user for whome the vital is being recoding
     db: Session = Depends(get_db)   # SQLAlchemy session dependency (injected automatically)
 ):
     # create the instance for vital to add into the database later
     # instance will all relevant fields
+   
     db_vital = models.Vital(
-        user_id=user_id,
+        user_id = current_user.id, # associate the vital with the current user
         recorded_at=vital.recorded_at,
         systolic_bp=vital.systolic_bp,
         diastolic_bp=vital.diastolic_bp,

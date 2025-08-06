@@ -119,6 +119,8 @@ def get_summary(
     )
 
     # --- Return summary as a Pydantic response object ---
+    
+
     return schemas.SummaryResponse(
         avg_bp=avg_bp,
         max_hr=max_hr,
