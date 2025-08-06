@@ -28,6 +28,7 @@ def get_summary(
     user_id = current_user.id
     start = _date_window(range) # Determine the start date for filtering
 
+    print("Generating summary for user:", user_id, "over range:", range)
     # Query all vitals for this user (optionally filter by date window)
     q = db.query(models.Vital).filter(models.Vital.user_id == user_id)
     if start:
