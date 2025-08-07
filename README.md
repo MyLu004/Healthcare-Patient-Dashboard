@@ -5,7 +5,7 @@ Date: August 3, 2025
 
 ---
 A modern web-based dashboard for tracking and visualizing patient vital signs, designed for healthcare professionals and individuals. The user-friendly interface makes it easy to record, edit, and review daily health metrics like blood pressure, heart rate, and temperature. Interactive charts and summary cards provide clear insights into health trends, supporting early detection of potential issues. Built for accessibility, the dashboard enables efficient data entry, secure storage, and real-time visualization for both clinics and personal use.
-- [Demo] (https://www.loom.com/share/0dc979257bfb48119651655c24d1a87e?sid=27805614-28c2-46dc-93c9-59ebddbc17f6)
+- [Demo](https://www.loom.com/share/0dc979257bfb48119651655c24d1a87e?sid=27805614-28c2-46dc-93c9-59ebddbc17f6)
 - [Live Website](https://healthcare-patient-dashboard.vercel.app)
 ---
 ## 📷 Demo Pic
