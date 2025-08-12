@@ -76,8 +76,10 @@ export default function Dashboard() {
 
   // Delete a recent entry (asks for confirmation, then reloads data)
   const handleDelete = async (id) => {
+    //console.log("Deleting entry with ssID:", id);  
     if (!confirm("Delete this entry?")) return;
     try {
+      console.log("Deleting entry with ssID:", id);   
       await deleteVital(id);
       await reloadData();
     } catch (e) {

@@ -8,9 +8,9 @@
   // - maintainablitity : easy to update URL if there is anything change
   // - abstraction 
 
-const BASE_URL = "https://healthcare-patient-dashboard.onrender.com"
+//const BASE_URL = "https://healthcare-patient-dashboard.onrender.com"
 
-//const BASE_URL = "http://127.0.0.1:8000"
+const BASE_URL = "http://127.0.0.1:8000"
 // Helper to get the token from localStorage (or wherever you store it)
 function getToken() {
   return localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
@@ -59,21 +59,31 @@ export async function updateVital(id, data) {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw await res.json();
+
+  if (!res.ok) {
+    const text = await res.text(); // ← capture FastAPI detail
+    throw new Error(`PUT /vitals/${id} ${res.status}: ${text}`);
+  }
   return res.json();
 }
 
 
+
 export async function deleteVital(id) {
+  console.log("[api] Deleting entry with ssID:", id);
   const token = getToken();
   const res = await fetch(`${BASE_URL}/vitals/${id}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw await res.json();
+  if (!res.ok && res.status !== 204) {
+    console.log("here")
+    const text = await res.text();
+    throw new Error(`DELETE /vitals/${id} ${res.status}: ${text}`);
+  }
   return true;
 }

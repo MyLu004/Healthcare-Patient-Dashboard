@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Body, status, Response
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas, oauth2
@@ -47,20 +47,29 @@ def create_vital(
 @router.put("/{vital_id}", response_model=schemas.VitalsOut)
 def update_vital(
     vital_id: int,
-    user_id: int = Query(..., description="TEMP: pass current user id until auth is wired"),
+    current_user: models.User = Depends(oauth2.get_current_user),
     payload: schemas.VitalUpdate = Body(...),
     db: Session = Depends(get_db),
 ):  
+    
+    user_id = current_user.id
     # Fetch the target vital entry by ID from the database
-    v = db.query(models.Vital).filter(models.Vital.id == vital_id).first()
+    v = db.query(models.Vital).filter(
+        models.Vital.id == vital_id,
+        models.Vital.user_id == user_id  # ensure the user owns this entry
+        ).first()
 
     # If not found or the user doesn't own this entry, raise 404
-    if not v or v.user_id != user_id:
+    if not v:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vital not found")
 
      # Update only the fields that were sent (exclude_unset=True ignores fields not provided)
-    for field, value in payload.dict(exclude_unset=True).items():
-        setattr(v, field, value)
+    updates = payload.model_dump(exclude_unset=True)
+    allowed = {"recorded_at","systolic_bp","diastolic_bp","heart_rate","temperature","glucose","notes"}
+    
+    for field, value in updates.items():
+        if field in allowed:
+            setattr(v, field, value)
 
     db.commit()
     db.refresh(v)
@@ -72,16 +81,18 @@ def update_vital(
 @router.delete("/{vital_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_vital(
     vital_id: int,
-    user_id: int = Query(...),
+    current_user: models.User = Depends(oauth2.get_current_user),
     db: Session = Depends(get_db),
-):  
-    # Fetch the vital entry by ID
-    v = db.query(models.Vital).filter(models.Vital.id == vital_id).first()
+):
+    user_id = current_user.id
+    v = db.query(models.Vital).filter(
+        models.Vital.id == vital_id,
+        models.Vital.user_id == user_id
+    ).first()
 
-    # If not found or the user doesn't own this entry, raise 404
-    if not v or v.user_id != user_id:
+    if not v:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vital not found")
 
     db.delete(v)
     db.commit()
-    return
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
