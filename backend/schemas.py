@@ -1,8 +1,14 @@
-from pydantic import BaseModel, EmailStr, conint
+from pydantic import BaseModel, EmailStr, conint, BaseModel, ConfigDict, field_validator
 from datetime import datetime
 
-from typing import Optional, List
+from typing import Optional, List, Literal
 
+
+# --------------------------
+# Common type aliases
+# --------------------------
+VisitType = Literal["telehealth", "in_person"]
+ApptStatus = Literal["requested", "confirmed", "denied", "cancelled", "reschedule_requested"]
 
 # == USER SCHEMAS ==
 
@@ -106,5 +112,105 @@ class RecentEntry(BaseModel):
 
 class RecentResponse(BaseModel):
     items: list[RecentEntry]
+    
 
+
+# ----- Facility -----
+
+class FacilityCreate(BaseModel):
+    name: str
+    address: Optional[str] = None
+    timezone: Optional[str] = None
+
+class FacilityOut(FacilityCreate):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ----- Availability ------
+class AvailabilityCreate(BaseModel):
+    provider_id: int
+    start_at: datetime
+    end_at: datetime
+    visit_type: VisitType = "telehealth"
+    facility_id: Optional[int] = None  # None = telehealth
+    location: Optional[str] = None     # free-text label (e.g., "Room 3")
+    capacity: int = 1
+    notes: Optional[str] = None
+
+    @field_validator("end_at")
+    @classmethod
+    def validate_time(cls, v, info):
+        start = info.data.get("start_at")
+        if start and v <= start:
+            raise ValueError("end_at must be after start_at")
+        return v
+
+class AvailabilityUpdate(BaseModel):
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    visit_type: Optional[VisitType] = None
+    facility_id: Optional[int] = None
+    location: Optional[str] = None
+    capacity: Optional[int] = None
+    notes: Optional[str] = None
+
+class AvailabilityOut(BaseModel):
+    id: int
+    provider_id: int
+    start_at: datetime
+    end_at: datetime
+    visit_type: VisitType
+    facility_id: Optional[int] = None
+    location: Optional[str] = None
+    capacity: int
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+# ---------- Appointment ----------
+class AppointmentCreate(BaseModel):
+    provider_id: int
+    start_at: datetime
+    end_at: datetime
+    visit_type: VisitType = "telehealth"
+    facility_id: Optional[int] = None
+    reason: Optional[str] = None
+    availability_id: Optional[int] = None  # if booked from a slot
+    location: Optional[str] = None         # snapshot label
+
+    @field_validator("end_at")
+    @classmethod
+    def validate_time(cls, v, info):
+        start = info.data.get("start_at")
+        if start and v <= start:
+            raise ValueError("end_at must be after start_at")
+        return v
+
+class AppointmentUpdate(BaseModel):
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    visit_type: Optional[VisitType] = None
+    facility_id: Optional[int] = None
+    reason: Optional[str] = None
+    status: Optional[ApptStatus] = None
+    location: Optional[str] = None
+
+class AppointmentOut(BaseModel):
+    id: int
+    patient_id: int
+    provider_id: int
+    start_at: datetime
+    end_at: datetime
+    visit_type: VisitType
+    status: ApptStatus
+    facility_id: Optional[int] = None
+    availability_id: Optional[int] = None
+    location: Optional[str] = None
+    reason: Optional[str] = None
+    video_url: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
