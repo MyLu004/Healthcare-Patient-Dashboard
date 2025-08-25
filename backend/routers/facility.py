@@ -11,10 +11,15 @@ router = APIRouter(prefix="/facilities", tags=["Facilities"])
 def list_facilities(db: Session = Depends(get_db)):
     return db.query(models.Facility).order_by(models.Facility.name.asc()).all()
 
+def require_staff(u: models.User = Depends(oauth2.get_current_user)):
+    if getattr(u, "role", "patient") != "staff":
+        raise HTTPException(status_code=403, detail="Staff only")
+    return u
+
 @router.post("/", response_model=schemas.FacilityOut, status_code=status.HTTP_201_CREATED)
 def create_facility(
     payload: schemas.FacilityCreate,
-    _user: models.User = Depends(oauth2.get_current_user), # gate if needed
+    _staff: models.User = Depends(require_staff),  # require staff
     db: Session = Depends(get_db),
 ):
     row = models.Facility(**payload.model_dump())

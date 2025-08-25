@@ -12,26 +12,26 @@ ApptStatus = Literal["requested", "confirmed", "denied", "cancelled", "reschedul
 
 # == USER SCHEMAS ==
 
-class UserBase(BaseModel):
+# ---- INPUT SCHEMAS (what client sends) ----
+class UserCreate(BaseModel):
     email: EmailStr
-    password: str
     username: str
-
-class UserCreate(UserBase):
-    pass
-
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-    username : str
-    create_at: datetime  #using str for datetime, can be changed to datetime if needed
-
-    class Config:
-        orm_mode = True
+    password: str                 # plain here; hash in service layer
+    role: Literal["user", "patient", "provider", "admin"]
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+# ---- OUTPUT SCHEMAS (what API returns) ----
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    username: str
+    role: str
+    created_at: datetime          # match your column name exactly
+    class Config:
+        orm_mode = True
 
 
 # == TOKEN SCHEMAS ==
@@ -40,6 +40,7 @@ class Token(BaseModel):
     token_type: str
     email: EmailStr
     username: str
+    role: str
 
 class TokenData(BaseModel):
     id: Optional[int] | None = None  #id can be None if not provided, using union type for optional id

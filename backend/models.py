@@ -19,14 +19,13 @@ class User(Base):
     email = Column(String, nullable=False, unique=True)
     username = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
+
     # If possible, rename to created_at (requires migration). For now, keep column name stable:
     create_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False)
 
     # Relationships with vital table ([user] one-to-many [vitals])
     vitals = relationship("Vital", back_populates="user", cascade="all, delete-orphan")
 
-    # Appointments on both sides
-    # foreign key
 
 
     appointments_as_patient = relationship(
@@ -42,6 +41,11 @@ class User(Base):
     availabilities = relationship(
         "Availability", foreign_keys="Availability.provider_id",
         back_populates="provider", cascade="all, delete-orphan"
+    )
+
+    role = Column(String, nullable=False, server_default="patient")  # "patient" | "provider" | "staff"
+    __table_args__ = (
+        CheckConstraint("role IN ('patient','provider','staff')", name="chk_user_role"),
     )
 
 class Vital(Base):
@@ -98,22 +102,33 @@ class Availability(Base):
     __tablename__ = "availabilities"
 
     id = Column(Integer, primary_key=True)
+
+    # Foreign Key from the user (provider)
+        # relationship [provider] one-to-many [avaibility]
+        # define in the postgreSQL : in the DB
     provider_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    # ---------- NEW ----------
+    
+    # ---------- location [extra info link to availability] ----------
     facility_id = Column(Integer, ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True)  # NULL = telehealth
 
+    # time properties
     start_at = Column(DateTime(timezone=True), nullable=False)   # UTC
     end_at   = Column(DateTime(timezone=True), nullable=False)   # UTC
 
+    # check the enum above
     visit_type = Column(SAEnum(VisitType, name="visittype"), nullable=False, default=VisitType.in_person)
+    
     # NOTE: your existing "location" is kept as a free-text label (e.g., "Room 3")
     location   = Column(String(120), nullable=True)
     capacity   = Column(Integer, nullable=False, default=1)
     notes      = Column(Text, nullable=True)
 
+    # data time properties
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
+    # ORM syntax : defining relationships between database tables (models) 
+        # define in the ORM : SQLAlchemy
     provider = relationship("User", foreign_keys=[provider_id], back_populates="availabilities")
   
     facility = relationship("Facility", foreign_keys=[facility_id], back_populates="availabilities")
@@ -129,11 +144,12 @@ class Appointment(Base):
 
     id = Column(Integer, primary_key=True)
 
+    # defining the relationship between the table in the database
     patient_id  = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     provider_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    # ---------- NEW ----------
+    
     facility_id = Column(Integer, ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True)  # NULL for telehealth
-    # ---------- NEW ----------
+    
     availability_id = Column(Integer, ForeignKey("availabilities.id", ondelete="SET NULL"), nullable=True)
 
     start_at = Column(DateTime(timezone=True), nullable=False)   # UTC
@@ -150,13 +166,15 @@ class Appointment(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    # Backrefs / relationships
+    # Backrefs / relationships / defining the relationship in the ORM - SQLAlchemy
     patient  = relationship("User", foreign_keys=[patient_id], back_populates="appointments_as_patient")
     provider = relationship("User", foreign_keys=[provider_id], back_populates="appointments_as_provider")
     
     facility = relationship("Facility", foreign_keys=[facility_id], back_populates="appointments")
     
     availability = relationship("Availability", foreign_keys=[availability_id])
+
+    # extra rule for the optimizations for the database table beyond the normal column definition
 
     __table_args__ = (
         Index("ix_appointment_provider_start", "provider_id", "start_at"),

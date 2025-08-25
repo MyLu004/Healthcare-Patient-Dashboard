@@ -44,7 +44,7 @@ def create_appointment(
 ):
     # sanity checks
     provider = db.query(models.User).filter(models.User.id == payload.provider_id).first()
-    if not provider:
+    if not provider or provider.role != "provider":
         raise HTTPException(status_code=404, detail="Provider not found")
     if payload.end_at <= payload.start_at:
         raise HTTPException(status_code=400, detail="end_at must be after start_at")

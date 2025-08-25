@@ -1,50 +1,82 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUserPlus } from "react-icons/fa"; // Healthcare-friendly icon
+import { FaUserPlus } from "react-icons/fa";
+
 const BASE_URL = import.meta.env.VITE_API_URL;
+
+// Match your backend's accepted roles. Default to "user" (per Swagger).
+const ROLES = [
+  { value: "user", label: "User" },
+  { value: "patient", label: "Patient" },
+  { value: "provider", label: "Provider" },
+  { value: "admin", label: "Admin" },
+];
 
 function Signup() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
+  const [role, setRole] = useState("user"); // default role per backend example
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
   const navigate = useNavigate();
 
-  const validatePassword = (pwd) => {
-    return /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pwd);
-  };
+  const validatePassword = (pwd) =>
+    /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/.test(pwd);
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+
     setError("");
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
     if (!validatePassword(password)) {
-      setError(
-        "Password must be at least 6 characters and contain a letter and a number."
-      );
+      setError("Password must be at least 6 characters and contain a letter and a number.");
       return;
     }
 
-    //const res = await fetch("http://localhost:8000/users", {
-    const res = await fetch(`${BASE_URL}/users`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, username }),
-    });
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${BASE_URL}/users/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Backend expects role IN BODY (not headers)
+        body: JSON.stringify({ email, password, username, role }),
+      });
 
-    const data = await res.json();
+      // Try to parse JSON even for error responses
+      let data = {};
+      
+      try { data = await res.json(); } catch (_) {}
 
-    if (res.ok) {
+      if (!res.ok) {
+        let message = "Unknown error";
+if (data?.detail) {
+  if (Array.isArray(data.detail)) {
+    // FastAPI validation errors come as a list
+    message = data.detail.map(err => `${err.loc.join(".")}: ${err.msg}`).join(", ");
+  } else if (typeof data.detail === "string") {
+    message = data.detail;
+  } else {
+    message = JSON.stringify(data.detail);
+  }
+}
+setError(`Signup failed: ${message}`);
+        return;
+      }
+
       alert("Signup successful!");
       navigate("/");
-    } else {
-      setError("Signup failed: " + (data.detail || "Unknown error"));
+    } catch (err) {
+      setError(`Network error: ${err?.message || "Unable to reach server"}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -66,12 +98,12 @@ function Signup() {
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         <input
-        type="text"
-        placeholder="Username"
-        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        required
+          type="text"
+          placeholder="Username"
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          required
         />
 
         <input
@@ -82,6 +114,20 @@ function Signup() {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+
+        {/* Role selector */}
+        <select
+          className="w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          required
+        >
+          {ROLES.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </select>
 
         <input
           type="password"
@@ -103,9 +149,12 @@ function Signup() {
 
         <button
           type="submit"
-          className="w-full bg-teal-500 text-white py-2 rounded-lg hover:bg-teal-600 transition"
+          disabled={submitting}
+          className={`w-full text-white py-2 rounded-lg transition ${
+            submitting ? "bg-teal-300 cursor-not-allowed" : "bg-teal-500 hover:bg-teal-600"
+          }`}
         >
-          Sign Up
+          {submitting ? "Signing up..." : "Sign Up"}
         </button>
 
         <button
@@ -115,6 +164,10 @@ function Signup() {
         >
           Already have an account? Log In
         </button>
+
+        <p className="text-xs text-gray-400 text-center">
+          Password must be ≥ 6 chars and include at least one letter and one number.
+        </p>
       </form>
     </div>
   );

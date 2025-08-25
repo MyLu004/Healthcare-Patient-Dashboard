@@ -21,8 +21,6 @@ router = APIRouter(
 # Define a POST route for user login with expected response type of Token schema
 @router.post("/login", response_model=schemas.Token)  # set the response model to Token schema  
 
-
-
 def login(user_credentials: OAuth2PasswordRequestForm = Depends() ,db:Session = Depends(get_db)):
     """
     Authenticates a user and returns a JWT access token if credentials are valid.
@@ -55,11 +53,26 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends() ,db:Session = 
         )
     
     #Generate the JWT access token with the user's ID as the payload 
-    access_token = oauth2.create_access_token(data={"sub": user.id})
+    access_token = oauth2.create_access_token(data={"sub": str(user.id), "role":user.role})
 
     
     return {"access_token": access_token, 
             "token_type": "bearer", 
             "email": user.email,
-            "username": user.username
+            "username": user.username,
+            "role": user.role
         }
+
+def require_staff(u=Depends(oauth2.get_current_user)):
+    if getattr(u, "role", "patient") != "staff":
+        raise HTTPException(403, "Staff only")
+    return u
+
+@router.post("/admin/providers", response_model=schemas.UserOut)
+def create_provider(u: schemas.UserCreate,
+                    _staff=Depends(require_staff),
+                    db: Session = Depends(get_db)):
+    user = models.User(email=u.email, username=u.username,
+                       password=hasing.hash_password(u.password), role="provider")
+    db.add(user); db.commit(); db.refresh(user)
+    return user

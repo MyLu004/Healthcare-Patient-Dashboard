@@ -21,7 +21,7 @@ router = APIRouter(
 )  #create a router for user related operations
 # CRUD USERS FUNCTIONS
 
-@router.get("/", response_model=List[schemas.UserBase])  #get all users
+@router.get("/", response_model=List[schemas.UserOut])  #get all users
 def get_users(db: Session = Depends(get_db)):
     users = db.query(models.User).all()
     return users
@@ -43,10 +43,19 @@ def get_user(id: int, db: Session = Depends(get_db)):
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     #print("here!")
     #hashing the password
+    if db.query(models.User).filter(models.User.email == user.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     hashed_password = hasing.hash_password(user.password)  #hash the password using bcrypt
     user.password = hashed_password 
     
-    new_user = models.User(**user.dict())
+    #new_user = models.User(**user.dict())
+    new_user = models.User(
+        email=user.email,
+        username=user.username,
+        password=hashed_password,
+        role=user.role  
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
