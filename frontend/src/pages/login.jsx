@@ -21,38 +21,63 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const res = await fetch(`${BASE_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ username: email, password }),
+  const res = await fetch(`${BASE_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ username: email, password }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    alert("Login failed: " + (data?.detail || "Unknown error"));
+    return;
+  }
+
+  const token = data.access_token;
+
+  // 1) Save token first (respect “Remember me”)
+  const store = rememberMe ? localStorage : sessionStorage;
+  store.setItem("accessToken", token);
+
+  // 2) Fetch the current user (id, email, role, etc.)
+  try {
+    const meRes = await fetch(`${BASE_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
+    if (meRes.ok) {
+      console.log("Successfully fetched /users/me");
+      const me = await meRes.json();
+      console.log("Fetched /users/me:", me);
+      // persist for the rest of the app
+      localStorage.setItem("me", JSON.stringify(me));
+      sessionStorage.setItem("me", JSON.stringify(me));
 
-    const data = await res.json();
-    if (!res.ok) {
-      alert("Login failed: " + (data?.detail || "Unknown error"));
-      return;
-    }
+      localStorage.setItem("role", me.role || "patient"); // Appointment.jsx reads this
+      sessionStorage.setItem("role", me.role || "patient");
 
-    const token = data.access_token;
-    const role = data.role || parseJwt(token).role || "patient";
+      localStorage.setItem("username", me.username || "");
+      localStorage.setItem("userEmail", me.email || "");
 
-    if (rememberMe) {
-      localStorage.setItem("accessToken", token);
-      localStorage.setItem("role", role);
+      console.log("Logged in user:", me);
     } else {
-      sessionStorage.setItem("accessToken", token);
-      sessionStorage.setItem("role", role);
+      // fallback to previous behavior if /users/me isn’t available
+      const roleFromToken = data.role || parseJwt(token).role || "patient";
+      localStorage.setItem("role", roleFromToken);
+      localStorage.setItem("username", data.username || "");
+      localStorage.setItem("userEmail", data.email || "");
     }
-    localStorage.setItem("username", data.username || "");
-    localStorage.setItem("userEmail", data.email || "");
+  } catch {
+    const roleFromToken = data.role || parseJwt(token).role || "patient";
+    localStorage.setItem("role", roleFromToken);
+  }
 
-    // Redirect by role
-    if (role === "provider") navigate("/appointments");
-    else if (role === "staff") navigate("/appointments");
-    else navigate("/mainDashboard");
-  };
+  // 3) Route by role
+  const role = localStorage.getItem("role") || "patient";
+  if (role === "provider" || role === "staff") navigate("/mainDashboard");
+  else navigate("/mainDashboard");
+};
 
   return (
     <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 to-teal-100">

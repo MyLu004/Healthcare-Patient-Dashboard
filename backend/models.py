@@ -21,7 +21,7 @@ class User(Base):
     password = Column(String, nullable=False)
 
     # If possible, rename to created_at (requires migration). For now, keep column name stable:
-    create_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=text("now()"), nullable=False)
 
     # Relationships with vital table ([user] one-to-many [vitals])
     vitals = relationship("Vital", back_populates="user", cascade="all, delete-orphan")

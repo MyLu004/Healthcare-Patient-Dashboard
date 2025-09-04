@@ -41,6 +41,7 @@ def my_availability(
               .order_by(models.Availability.start_at.asc())
               .all())
 
+# create availability (provider only)
 @router.post("/", response_model=schemas.AvailabilityOut, status_code=status.HTTP_201_CREATED)
 def create_availability(
     payload: schemas.AvailabilityCreate,   # <-- in this option, remove provider_id from the schema

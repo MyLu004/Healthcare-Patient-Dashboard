@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, APIRouter
 
-import models, schemas
+import models, schemas, oauth2
 
 #from ..utils.hasing import hash_password, verify_password
 
@@ -20,6 +20,10 @@ router = APIRouter(
 
 )  #create a router for user related operations
 # CRUD USERS FUNCTIONS
+
+@router.get("/me", response_model=schemas.UserOut)
+def read_me(current_user: models.User = Depends(oauth2.get_current_user)):
+    return current_user
 
 @router.get("/", response_model=List[schemas.UserOut])  #get all users
 def get_users(db: Session = Depends(get_db)):
@@ -61,3 +65,4 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+

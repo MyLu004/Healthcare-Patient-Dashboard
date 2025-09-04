@@ -13,14 +13,14 @@
 const BASE_URL = "http://127.0.0.1:8000"
 
 
-// ======== HELPER FUNCTION -----------
+// ======== HELPER FUNCTION ===============
 
 // GET and SET token for the JWT token access
 // Helper to get the token from localStorage or session storage
 function getToken() {
   return localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
 }
-
+  
 function setToken(token) {
   localStorage.setItem("accessToken", token);
 }
