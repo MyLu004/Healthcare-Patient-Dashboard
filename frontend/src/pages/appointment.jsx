@@ -1,21 +1,26 @@
-// src/pages/appointment.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {
   myAppointments,
   createAppointment,
   listAvailability,
+  cancelAppointment,
 } from "../lib/api";
 import AdminAppointmentsTable from "../components/AdminAppointmentsTable";
 import ProviderCalendar from "../components/ProviderCalendar";
 
 function getRole() {
-  return localStorage.getItem("role") || sessionStorage.getItem("role") || "patient";
+  return (
+    localStorage.getItem("role") ||
+    sessionStorage.getItem("role") ||
+    "patient"
+  );
 }
 
 export default function Appointment() {
-  const role = useMemo(() => getRole(), []);
+  const role = getRole(); // useMemo not needed here
+
   if (role === "provider") return <ProviderView />;
   if (role === "staff") return <StaffView />;
   return <PatientView />;
@@ -29,39 +34,69 @@ function PatientView() {
   const [endAt, setEndAt] = useState(null);
   const [visitType, setVisitType] = useState("telehealth");
   const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  async function loadMine() {
-    const list = await myAppointments();
-    setAppointments(Array.isArray(list) ? list : []);
-  }
-  useEffect(() => { loadMine(); }, []);
+  // Fetch my appointments
+  const loadMine = useCallback(async () => {
+    try {
+      setLoading(true);
+      const list = await myAppointments();
+      const filtered = (list || []).filter(
+        (a) => a.status !== "denied" && a.status !== "cancelled"
+      );
+      setAppointments(filtered);
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert("Failed to load appointments");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    loadMine();
+  }, [loadMine]);
+
+  // Find provider slots
   async function findSlots() {
-    if (!providerId) return alert("Enter provider ID");
-    const list = await listAvailability({ provider_id: providerId, start_from: new Date().toISOString() });
+    if (!providerId) {
+      // eslint-disable-next-line no-alert
+      return alert("Enter provider ID");
+    }
+    const list = await listAvailability({
+      provider_id: Number(providerId),
+      start_from: new Date().toISOString(),
+    });
     setSlots(list || []);
   }
 
+  // Request custom appointment
   async function requestAppt(e) {
     e.preventDefault();
-    if (!providerId || !startAt || !endAt) return alert("Fill provider + time");
+    if (!providerId || !startAt || !endAt) {
+      // eslint-disable-next-line no-alert
+      return alert("Fill provider + time");
+    }
     try {
       await createAppointment({
         provider_id: Number(providerId),
         start_at: startAt.toISOString(),
         end_at: endAt.toISOString(),
         visit_type: visitType,
-        // facility_id: visitType === "in_person" ? someFacilityId : null
         reason: "",
       });
-      setStartAt(null); setEndAt(null);
+      setStartAt(null);
+      setEndAt(null);
       await loadMine();
+      // eslint-disable-next-line no-alert
       alert("Appointment requested!");
     } catch (err) {
+      // eslint-disable-next-line no-alert
       alert(err.message);
     }
   }
 
+  // Request appointment from slot
   async function requestFromSlot(slot) {
     try {
       await createAppointment({
@@ -75,8 +110,25 @@ function PatientView() {
         facility_id: slot.facility_id ?? null,
       });
       await loadMine();
+      // eslint-disable-next-line no-alert
       alert("Appointment requested from slot!");
     } catch (e) {
+      // eslint-disable-next-line no-alert
+      alert(e.message);
+    }
+  }
+
+  // Cancel appointment
+  async function onCancel(id) {
+    // eslint-disable-next-line no-alert
+    if (!confirm("Cancel this appointment?")) return;
+    try {
+      await cancelAppointment(id);
+      await loadMine();
+      // eslint-disable-next-line no-alert
+      alert("Appointment cancelled");
+    } catch (e) {
+      // eslint-disable-next-line no-alert
       alert(e.message);
     }
   }
@@ -86,64 +138,154 @@ function PatientView() {
       <h2 className="text-3xl font-bold">Appointments</h2>
 
       {/* Request form */}
-      <form onSubmit={requestAppt} className="bg-white shadow-soft rounded-2xl p-6 border space-y-4">
+      <form
+        onSubmit={requestAppt}
+        className="bg-white shadow-soft rounded-2xl p-6 border space-y-4"
+      >
         <div className="grid md:grid-cols-4 gap-3">
           <div>
             <label className="block text-sm mb-1">Provider ID</label>
-            <input value={providerId} onChange={e => setProviderId(e.target.value)} className="w-full border rounded p-2" placeholder="e.g. 42" />
+            <input
+              value={providerId}
+              onChange={(e) => setProviderId(e.target.value)}
+              className="w-full border rounded p-2"
+              placeholder="e.g. 42"
+            />
           </div>
           <div>
             <label className="block text-sm mb-1">Start</label>
-            <DatePicker selected={startAt} onChange={setStartAt} showTimeSelect dateFormat="Pp" className="w-full border rounded p-2" />
+            <DatePicker
+              selected={startAt}
+              onChange={setStartAt}
+              showTimeSelect
+              dateFormat="Pp"
+              className="w-full border rounded p-2"
+            />
           </div>
           <div>
             <label className="block text-sm mb-1">End</label>
-            <DatePicker selected={endAt} onChange={setEndAt} showTimeSelect dateFormat="Pp" className="w-full border rounded p-2" />
+            <DatePicker
+              selected={endAt}
+              onChange={setEndAt}
+              showTimeSelect
+              dateFormat="Pp"
+              className="w-full border rounded p-2"
+            />
           </div>
           <div>
             <label className="block text-sm mb-1">Type</label>
-            <select value={visitType} onChange={e => setVisitType(e.target.value)} className="w-full border rounded p-2">
+            <select
+              value={visitType}
+              onChange={(e) => setVisitType(e.target.value)}
+              className="w-full border rounded p-2"
+            >
               <option value="telehealth">Telehealth</option>
               <option value="in_person">In-person</option>
             </select>
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 rounded bg-teal-600 text-white" type="submit">Request Appointment</button>
-          <button className="px-4 py-2 rounded border" type="button" onClick={findSlots}>Find Provider Slots</button>
+          <button
+            className="px-4 py-2 rounded bg-teal-600 text-white"
+            type="submit"
+          >
+            Request Appointment
+          </button>
+          <button
+            className="px-4 py-2 rounded border"
+            type="button"
+            onClick={findSlots}
+          >
+            Find Provider Slots
+          </button>
         </div>
       </form>
 
-      {/* Available slots (if provider_id entered) */}
+      {/* Available slots */}
       {slots.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-xl font-semibold">Available Slots</h3>
           <div className="grid md:grid-cols-2 gap-3">
-            {slots.map(s => (
-              <div key={s.id} className="border rounded-xl p-3 flex items-center justify-between bg-white">
+            {slots.map((s) => (
+              <div
+                key={s.id}
+                className="border rounded-xl p-3 flex items-center justify-between bg-white"
+              >
                 <div>
-                  <div className="font-medium">{new Date(s.start_at).toLocaleString()}</div>
-                  <div className="text-sm text-gray-600">{s.visit_type}{s.location ? ` • ${s.location}` : ""}</div>
+                  <div className="font-medium">
+                    {new Date(s.start_at).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {s.visit_type}
+                    {s.location ? ` • ${s.location}` : ""}
+                  </div>
                 </div>
-                <button onClick={() => requestFromSlot(s)} className="px-3 py-1 rounded bg-teal-600 text-white">Request</button>
+                <button
+                  onClick={() => requestFromSlot(s)}
+                  className="px-3 py-1 rounded bg-teal-600 text-white"
+                >
+                  Request
+                </button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* My upcoming */}
+      {/* My upcoming appointments */}
       <section className="space-y-2">
-        <h3 className="text-xl font-semibold">My Upcoming</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-semibold">My Upcoming</h3>
+          <button
+            onClick={loadMine}
+            disabled={loading}
+            className="px-4 py-2 rounded border bg-white hover:bg-gray-100 disabled:opacity-60"
+          >
+            {loading ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+
         {appointments.length === 0 ? (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-xl">No upcoming appointments.</div>
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-xl">
+            No upcoming appointments.
+          </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-3">
-            {appointments.map(a => (
-              <div key={a.id} className="bg-white shadow-soft rounded-2xl p-4 border">
-                <div className="font-medium">{new Date(a.start_at).toLocaleString()}</div>
-                <div className="text-sm text-gray-600">Provider #{a.provider_id} • {a.visit_type} • {a.status}</div>
-                {a.reason && <div className="text-gray-500 text-sm mt-1">{a.reason}</div>}
+            {appointments.map((a) => (
+              <div
+                key={a.id}
+                className="bg-white shadow-soft rounded-2xl p-4 border"
+              >
+                <div className="font-medium">
+                  {new Date(a.start_at).toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600">
+                  Provider #{a.provider_id} • {a.visit_type} •{" "}
+                  <span
+                    className={
+                      a.status === "confirmed"
+                        ? "text-green-600 font-medium"
+                        : a.status === "requested"
+                        ? "text-yellow-600 font-medium"
+                        : "text-gray-500"
+                    }
+                  >
+                    {a.status}
+                  </span>
+                </div>
+                {a.reason && (
+                  <div className="text-gray-500 text-sm mt-1">{a.reason}</div>
+                )}
+                <div className="mt-2">
+                  {(a.status === "requested" || a.status === "confirmed") && (
+                    <button
+                      onClick={() => onCancel(a.id)}
+                      className="px-3 py-1 rounded border text-red-600 hover:bg-red-50"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -163,9 +305,8 @@ function ProviderView() {
   );
 }
 
-// ---------- Staff (simple reuse for now) ----------
+// ---------- Staff ----------
 function StaffView() {
-  // If you later expose a global /appointments list for staff, swap this out
   return (
     <div className="space-y-10 m-5">
       <h2 className="text-3xl font-bold">Provider Console (Staff View)</h2>

@@ -75,14 +75,16 @@ export default function ProviderCalendar() {
   }
 
   async function remove(id) {
-    if (!confirm("Delete this slot?")) return;
-    try {
-      await deleteAvailability(id);
-      //await load();
-    } catch (e) {
-      alert(e.message);
-    }
+  if (!confirm("Delete this slot?")) return;
+  try {
+    await deleteAvailability(id);
+    // Refresh the list after deletion
+    const list = await listMyAvailability();
+    setRows(Array.isArray(list) ? list : []);
+  } catch (e) {
+    alert(e.message);
   }
+}
 
   return (
     <div className="space-y-4">
@@ -105,7 +107,7 @@ export default function ProviderCalendar() {
           <label className="block text-sm mb-1">End</label>
           <DatePicker
             selected={endAt}
-            onChange={setEndAt}
+            onChange={onEndChange}
             showTimeSelect
             minDate={startAt || undefined}
             dateFormat="Pp"

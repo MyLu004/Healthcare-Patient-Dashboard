@@ -32,10 +32,17 @@ def _has_overlap(
 def my_appointments(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(oauth2.get_current_user),
+    active_only: bool = Query(True),  # default to hiding cancelled/denied
 ):
-    return db.query(models.Appointment).filter(
+    q = db.query(models.Appointment).filter(
         models.Appointment.patient_id == current_user.id
-    ).order_by(models.Appointment.start_at.asc()).all()
+    )
+    if active_only:
+        q = q.filter(models.Appointment.status.in_([
+            models.ApptStatus.requested,
+            models.ApptStatus.confirmed,
+        ]))
+    return q.order_by(models.Appointment.start_at.asc()).all()
 
 @router.get("/provider", response_model=List[schemas.AppointmentOut])
 def provider_appointments(

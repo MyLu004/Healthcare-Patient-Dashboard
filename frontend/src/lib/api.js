@@ -141,6 +141,15 @@ export async function cancelAppointment(id) {
 }
 
 
+export async function listMyAppointments(activeOnly = true) {
+  const res = await fetch(`/appointments/mine${activeOnly ? '?active_only=true' : ''}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+  });
+  if (!res.ok) throw new Error('Failed to load');
+  return res.json();
+}
+
+
 // ======== vitals in the dashboard =========
 
 export async function fetchSummary() {
