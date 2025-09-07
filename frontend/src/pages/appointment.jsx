@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import {
@@ -9,6 +9,7 @@ import {
 } from "../lib/api";
 import AdminAppointmentsTable from "../components/AdminAppointmentsTable";
 import ProviderCalendar from "../components/ProviderCalendar";
+import { VapiWidget } from "@vapi-ai/client-sdk-react";
 
 function getRole() {
   return (
@@ -20,7 +21,6 @@ function getRole() {
 
 export default function Appointment() {
   const role = getRole(); // useMemo not needed here
-
   if (role === "provider") return <ProviderView />;
   if (role === "staff") return <StaffView />;
   return <PatientView />;
@@ -36,7 +36,12 @@ function PatientView() {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch my appointments
+  const me = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("me") || "{}"); }
+    catch { return {}; }
+  }, []);
+
+  // Fetch my appointments (hide denied/cancelled)
   const loadMine = useCallback(async () => {
     try {
       setLoading(true);
@@ -45,24 +50,17 @@ function PatientView() {
         (a) => a.status !== "denied" && a.status !== "cancelled"
       );
       setAppointments(filtered);
-    } catch (err) {
-      // eslint-disable-next-line no-alert
+    } catch {
       alert("Failed to load appointments");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadMine();
-  }, [loadMine]);
+  useEffect(() => { loadMine(); }, [loadMine]);
 
-  // Find provider slots
   async function findSlots() {
-    if (!providerId) {
-      // eslint-disable-next-line no-alert
-      return alert("Enter provider ID");
-    }
+    if (!providerId) return alert("Enter provider ID");
     const list = await listAvailability({
       provider_id: Number(providerId),
       start_from: new Date().toISOString(),
@@ -70,13 +68,9 @@ function PatientView() {
     setSlots(list || []);
   }
 
-  // Request custom appointment
   async function requestAppt(e) {
     e.preventDefault();
-    if (!providerId || !startAt || !endAt) {
-      // eslint-disable-next-line no-alert
-      return alert("Fill provider + time");
-    }
+    if (!providerId || !startAt || !endAt) return alert("Fill provider + time");
     try {
       await createAppointment({
         provider_id: Number(providerId),
@@ -85,18 +79,14 @@ function PatientView() {
         visit_type: visitType,
         reason: "",
       });
-      setStartAt(null);
-      setEndAt(null);
+      setStartAt(null); setEndAt(null);
       await loadMine();
-      // eslint-disable-next-line no-alert
       alert("Appointment requested!");
     } catch (err) {
-      // eslint-disable-next-line no-alert
       alert(err.message);
     }
   }
 
-  // Request appointment from slot
   async function requestFromSlot(slot) {
     try {
       await createAppointment({
@@ -110,25 +100,19 @@ function PatientView() {
         facility_id: slot.facility_id ?? null,
       });
       await loadMine();
-      // eslint-disable-next-line no-alert
       alert("Appointment requested from slot!");
     } catch (e) {
-      // eslint-disable-next-line no-alert
       alert(e.message);
     }
   }
 
-  // Cancel appointment
   async function onCancel(id) {
-    // eslint-disable-next-line no-alert
     if (!confirm("Cancel this appointment?")) return;
     try {
       await cancelAppointment(id);
       await loadMine();
-      // eslint-disable-next-line no-alert
       alert("Appointment cancelled");
     } catch (e) {
-      // eslint-disable-next-line no-alert
       alert(e.message);
     }
   }
@@ -138,10 +122,7 @@ function PatientView() {
       <h2 className="text-3xl font-bold">Appointments</h2>
 
       {/* Request form */}
-      <form
-        onSubmit={requestAppt}
-        className="bg-white shadow-soft rounded-2xl p-6 border space-y-4"
-      >
+      <form onSubmit={requestAppt} className="bg-white shadow-soft rounded-2xl p-6 border space-y-4">
         <div className="grid md:grid-cols-4 gap-3">
           <div>
             <label className="block text-sm mb-1">Provider ID</label>
@@ -185,17 +166,10 @@ function PatientView() {
           </div>
         </div>
         <div className="flex gap-3">
-          <button
-            className="px-4 py-2 rounded bg-teal-600 text-white"
-            type="submit"
-          >
+          <button className="px-4 py-2 rounded bg-teal-600 text-white" type="submit">
             Request Appointment
           </button>
-          <button
-            className="px-4 py-2 rounded border"
-            type="button"
-            onClick={findSlots}
-          >
+          <button className="px-4 py-2 rounded border" type="button" onClick={findSlots}>
             Find Provider Slots
           </button>
         </div>
@@ -207,23 +181,14 @@ function PatientView() {
           <h3 className="text-xl font-semibold">Available Slots</h3>
           <div className="grid md:grid-cols-2 gap-3">
             {slots.map((s) => (
-              <div
-                key={s.id}
-                className="border rounded-xl p-3 flex items-center justify-between bg-white"
-              >
+              <div key={s.id} className="border rounded-xl p-3 flex items-center justify-between bg-white">
                 <div>
-                  <div className="font-medium">
-                    {new Date(s.start_at).toLocaleString()}
-                  </div>
+                  <div className="font-medium">{new Date(s.start_at).toLocaleString()}</div>
                   <div className="text-sm text-gray-600">
-                    {s.visit_type}
-                    {s.location ? ` • ${s.location}` : ""}
+                    {s.visit_type}{s.location ? ` • ${s.location}` : ""}
                   </div>
                 </div>
-                <button
-                  onClick={() => requestFromSlot(s)}
-                  className="px-3 py-1 rounded bg-teal-600 text-white"
-                >
+                <button onClick={() => requestFromSlot(s)} className="px-3 py-1 rounded bg-teal-600 text-white">
                   Request
                 </button>
               </div>
@@ -232,7 +197,7 @@ function PatientView() {
         </div>
       )}
 
-      {/* My upcoming appointments */}
+      {/* My upcoming */}
       <section className="space-y-2">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">My Upcoming</h3>
@@ -252,36 +217,22 @@ function PatientView() {
         ) : (
           <div className="grid md:grid-cols-2 gap-3">
             {appointments.map((a) => (
-              <div
-                key={a.id}
-                className="bg-white shadow-soft rounded-2xl p-4 border"
-              >
-                <div className="font-medium">
-                  {new Date(a.start_at).toLocaleString()}
-                </div>
+              <div key={a.id} className="bg-white shadow-soft rounded-2xl p-4 border">
+                <div className="font-medium">{new Date(a.start_at).toLocaleString()}</div>
                 <div className="text-sm text-gray-600">
                   Provider #{a.provider_id} • {a.visit_type} •{" "}
-                  <span
-                    className={
-                      a.status === "confirmed"
-                        ? "text-green-600 font-medium"
-                        : a.status === "requested"
-                        ? "text-yellow-600 font-medium"
-                        : "text-gray-500"
-                    }
-                  >
+                  <span className={
+                    a.status === "confirmed" ? "text-green-600 font-medium"
+                    : a.status === "requested" ? "text-yellow-600 font-medium"
+                    : "text-gray-500"
+                  }>
                     {a.status}
                   </span>
                 </div>
-                {a.reason && (
-                  <div className="text-gray-500 text-sm mt-1">{a.reason}</div>
-                )}
+                {a.reason && <div className="text-gray-500 text-sm mt-1">{a.reason}</div>}
                 <div className="mt-2">
                   {(a.status === "requested" || a.status === "confirmed") && (
-                    <button
-                      onClick={() => onCancel(a.id)}
-                      className="px-3 py-1 rounded border text-red-600 hover:bg-red-50"
-                    >
+                    <button onClick={() => onCancel(a.id)} className="px-3 py-1 rounded border text-red-600 hover:bg-red-50">
                       Cancel
                     </button>
                   )}
@@ -291,6 +242,27 @@ function PatientView() {
           </div>
         )}
       </section>
+
+      {/* Vapi floating widget */}
+      <VapiWidget
+        publicKey={import.meta.env.VITE_VAPI_PUBLIC_KEY}
+        assistantId={import.meta.env.VITE_VAPI_ASSISTANT_ID}
+        mode="voice" // or "chat"
+        assistantOverrides={{
+          variableValues: {
+            patientId: me?.id || null,
+            patientEmail: me?.email || null,
+          },
+        }}
+        onCallStart={() => console.log("Vapi call started")}
+        onCallEnd={() => {
+          console.log("Vapi call ended");
+          // Pull fresh data in case the assistant booked/cancelled something
+          loadMine();
+        }}
+        onError={(e) => console.error("Vapi error", e)}
+      />
+      {/* Remove the <script src="...widget.umd.js" /> tag when using the React package */}
     </div>
   );
 }
