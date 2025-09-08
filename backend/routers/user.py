@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, APIRouter
+from fastapi import APIRouter, Depends, HTTPException, status
 
 import models, schemas, oauth2
 
