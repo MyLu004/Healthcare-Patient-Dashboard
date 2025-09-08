@@ -253,8 +253,23 @@ function PatientView() {
         enabled
         publicKey={import.meta.env.VITE_VAPI_PUBLIC_KEY}
         mode="voice"
-        assistant={{ id: import.meta.env.VITE_VAPI_ASSISTANT_ID }}
-/>
+        assistantId={import.meta.env.VITE_VAPI_ASSISTANT_ID}
+        assistantOverrides={{
+          // use variableValues for dynamic variables
+          variableValues: {
+            patientId: me?.id ?? null,
+            patientEmail: me?.email ?? null,
+          },
+        }}
+        onCallStart={() => console.log("Vapi call started")}
+        onCallEnd={() => { console.log("Vapi call ended"); loadMine(); }}
+        onError={async (e) => {
+          console.error("Vapi error detail:", e);
+          try {
+            if (e?.error?.json) console.error("Vapi error body:", await e.error.json());
+          } catch {}
+        }}
+      />
       
     </div>
   );
