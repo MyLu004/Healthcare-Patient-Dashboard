@@ -249,27 +249,37 @@ function PatientView() {
         )}
       </section>
 
-      <VapiWidget
-        enabled
-        publicKey={import.meta.env.VITE_VAPI_PUBLIC_KEY}
+      <vapi-widget
+        public-key={import.meta.env.VITE_VAPI_PUBLIC_KEY}
+        assistant-id={import.meta.env.VITE_VAPI_ASSISTANT_ID}
         mode="voice"
-        assistantId={import.meta.env.VITE_VAPI_ASSISTANT_ID}
-        assistantOverrides={{
-          // use variableValues for dynamic variables
-          variableValues: {
-            patientId: me?.id ?? null,
-            patientEmail: me?.email ?? null,
-          },
-        }}
-        onCallStart={() => console.log("Vapi call started")}
-        onCallEnd={() => { console.log("Vapi call ended"); loadMine(); }}
-        onError={async (e) => {
-          console.error("Vapi error detail:", e);
-          try {
-            if (e?.error?.json) console.error("Vapi error body:", await e.error.json());
-          } catch {}
-        }}
-      />
+        theme="dark"
+        base-bg-color="#000000"
+        accent-color="#14B8A6"
+        cta-button-color="#000000"
+        cta-button-text-color="#ffffff"
+        border-radius="large"
+        size="full"
+        position="bottom-right"
+        title="TALK WITH AI"
+        start-button-text="Start"
+        end-button-text="End Call"
+        chat-first-message="Hey, How can I help you today?"
+        chat-placeholder="Type your message..."
+        voice-show-transcript="true"
+        consent-required="true"
+        consent-title="Terms and conditions"
+        consent-content="By clicking Agree, and each time I interact with this AI agent, I consent to the recording, storage, and sharing of my communications with third-party service providers, and as otherwise described in our Terms of Service."
+        consent-storage-key="vapi_widget_consent"
+        >
+        </vapi-widget>
+
+        <script src="https://unpkg.com/@vapi-ai/client-sdk-react/dist/embed/widget.umd.js" async type="text/javascript"></script>
+
+
+      
+
+     
       
     </div>
   );
