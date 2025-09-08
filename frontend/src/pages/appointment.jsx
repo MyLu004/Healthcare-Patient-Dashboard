@@ -20,7 +20,6 @@ function getRole() {
   );
 }
 
-console.log("Vapi env", import.meta.env.VITE_VAPI_PUBLIC_KEY, import.meta.env.VITE_VAPI_ASSISTANT_ID);
 
 
 export default function Appointment() {
@@ -29,6 +28,9 @@ export default function Appointment() {
   if (role === "staff") return <StaffView />;
   return <PatientView />;
 }
+
+console.log("Vapi env", import.meta.env.VITE_VAPI_PUBLIC_KEY, import.meta.env.VITE_VAPI_ASSISTANT_ID);
+
 
 // ---------- Patient ----------
 function PatientView() {
