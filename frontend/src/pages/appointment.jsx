@@ -20,6 +20,9 @@ function getRole() {
   );
 }
 
+console.log("Vapi env", import.meta.env.VITE_VAPI_PUBLIC_KEY, import.meta.env.VITE_VAPI_ASSISTANT_ID);
+
+
 export default function Appointment() {
   const role = getRole(); // useMemo not needed here
   if (role === "provider") return <ProviderView />;
@@ -247,22 +250,24 @@ function PatientView() {
       <VapiWidget
         enabled
         publicKey={import.meta.env.VITE_VAPI_PUBLIC_KEY}
-        assistantId={import.meta.env.VITE_VAPI_ASSISTANT_ID}
         mode="voice"
-        assistantOverrides={{
-          variableValues: {
-            patientId: me?.id || null,
-            patientEmail: me?.email || null,
+        assistant={{
+          id: import.meta.env.VITE_VAPI_ASSISTANT_ID,
+          overrides: {
+            variableValues: {
+              patientId: me?.id || null,
+              patientEmail: me?.email || null,
+            },
           },
         }}
         onCallStart={() => console.log("Vapi call started")}
         onCallEnd={() => {
           console.log("Vapi call ended");
-          loadMine(); // refresh list
+          loadMine(); // refresh your list
         }}
-        onError={(e) => console.error("Vapi error", e)}
-/>
-      {/* Remove the <script src="...widget.umd.js" /> tag when using the React package */}
+        onError={(e) => console.error("Vapi error detail", e)}
+      />
+      
     </div>
   );
 }

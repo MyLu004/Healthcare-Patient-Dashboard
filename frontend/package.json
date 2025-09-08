@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vapi-ai/client-sdk-react": "^0.0.12",
+    "@vapi-ai/client-sdk-react": "0.0.12",
     "date-fns": "^4.1.0",
     "react": "^19.1.0",
     "react-calendar": "^6.0.0",
