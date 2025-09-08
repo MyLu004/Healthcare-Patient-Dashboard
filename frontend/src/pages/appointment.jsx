@@ -9,6 +9,7 @@ import {
 } from "../lib/api";
 import AdminAppointmentsTable from "../components/AdminAppointmentsTable";
 import ProviderCalendar from "../components/ProviderCalendar";
+
 import { VapiWidget } from "@vapi-ai/client-sdk-react";
 
 function getRole() {
@@ -243,11 +244,11 @@ function PatientView() {
         )}
       </section>
 
-      {/* Vapi floating widget */}
       <VapiWidget
+        enabled
         publicKey={import.meta.env.VITE_VAPI_PUBLIC_KEY}
         assistantId={import.meta.env.VITE_VAPI_ASSISTANT_ID}
-        mode="voice" // or "chat"
+        mode="voice"
         assistantOverrides={{
           variableValues: {
             patientId: me?.id || null,
@@ -257,11 +258,10 @@ function PatientView() {
         onCallStart={() => console.log("Vapi call started")}
         onCallEnd={() => {
           console.log("Vapi call ended");
-          // Pull fresh data in case the assistant booked/cancelled something
-          loadMine();
+          loadMine(); // refresh list
         }}
         onError={(e) => console.error("Vapi error", e)}
-      />
+/>
       {/* Remove the <script src="...widget.umd.js" /> tag when using the React package */}
     </div>
   );
