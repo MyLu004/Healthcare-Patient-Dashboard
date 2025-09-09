@@ -14,8 +14,7 @@ import models
 
 router = APIRouter(prefix="/vapi", tags=["Vapi"])
 
-# Set this in your backend env (.env or host):
-# VAPI_WEBHOOK_SECRET="super-secret"
+# Set in backend env (.env / host): VAPI_WEBHOOK_SECRET="super-secret"
 VAPI_WEBHOOK_SECRET = os.getenv("VAPI_WEBHOOK_SECRET", "")
 
 
@@ -40,8 +39,41 @@ def _parse_iso(s: str) -> datetime:
     return datetime.fromisoformat(s)
 
 
-def _to_int(x: Any) -> int:
+def _to_int(x: Any):
     return int(x) if x is not None else None
+
+
+def _to_bool(x: Any, default: bool = True) -> bool:
+    if isinstance(x, bool):
+        return x
+    if x is None:
+        return default
+    s = str(x).strip().lower()
+    if s in ("true", "1", "yes", "y", "on"):
+        return True
+    if s in ("false", "0", "no", "n", "off"):
+        return False
+    return default
+
+
+def _patient_overlap(
+    db: Session,
+    patient_id: int,
+    start_at: datetime,
+    end_at: datetime,
+    exclude_id: Optional[int] = None,
+) -> bool:
+    q = db.query(models.Appointment).filter(
+        models.Appointment.patient_id == patient_id,
+        models.Appointment.start_at < end_at,
+        models.Appointment.end_at > start_at,
+        models.Appointment.status.in_(
+            [models.ApptStatus.requested, models.ApptStatus.confirmed]
+        ),
+    )
+    if exclude_id:
+        q = q.filter(models.Appointment.id != exclude_id)
+    return db.query(q.exists()).scalar()  # type: ignore
 
 
 # ---------------------------
@@ -63,31 +95,12 @@ async def vapi_tool_calls(
     db: Session = Depends(get_db),
     x_vapi_signature: Optional[str] = Header(None),
 ):
-    """
-    Vapi posts tool calls here.
-
-    Incoming (simplified):
-    {
-      "message": {
-        "type": "tool-calls",
-        "toolCallList": [
-          {"id":"...","name":"list_availability","arguments": {...}},
-          ...
-        ]
-      }
-    }
-
-    Response MUST be:
-    { "results": [ { "toolCallId": "<id>", "result": {...} }, ... ] }
-    """
-    # --- Verify shared-secret ---
     if VAPI_WEBHOOK_SECRET and x_vapi_signature != VAPI_WEBHOOK_SECRET:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signature")
 
     body = await request.json()
     message = (body or {}).get("message") or {}
     if message.get("type") != "tool-calls":
-        # Ignore non tool events
         return {"results": []}
 
     results: List[Dict[str, Any]] = []
@@ -95,12 +108,35 @@ async def vapi_tool_calls(
     def add_result(tool_call_id: str, payload: Dict[str, Any]) -> None:
         results.append({"toolCallId": tool_call_id, "result": payload})
 
-    for tc in message.get("toolCallList", []) or []:
-        tool_call_id = tc.get("id")
-        name = (tc.get("name") or "").strip()
-        args = tc.get("arguments") or {}
+    # ---------- START: accept BOTH shapes & dedupe by id ----------
+    tool_calls_raw: List[dict] = []
+    seen_ids = set()
 
-        # Some providers send JSON string for args
+    for key in ("toolCallList", "toolCalls"):
+        arr = message.get(key) or []
+        if isinstance(arr, list):
+            for tc in arr:
+                tid = tc.get("id") or f"{key}:{len(tool_calls_raw)}"
+                if tid in seen_ids:
+                    continue
+                seen_ids.add(tid)
+                tool_calls_raw.append(tc)
+    # ---------- END: accept BOTH shapes ----------
+
+    for tc in tool_calls_raw:
+        tool_call_id = tc.get("id")
+
+        # Support both locations for name/args
+        fn = tc.get("function") or {}
+        name = (tc.get("name") or fn.get("name") or "").strip()
+
+        
+        #print(f"[VAPI] tool={name!r} args={args!r}")
+
+        args = tc.get("arguments", None)
+        if args is None:
+            args = fn.get("arguments", {})
+
         if isinstance(args, str):
             try:
                 args = json.loads(args)
@@ -113,15 +149,17 @@ async def vapi_tool_calls(
         def err(msg: str, code: int = 400) -> None:
             ok({"error": msg, "code": code})
 
+        # ---- Optional: tiny debug so you can SEE what's parsed ----
+        # print(f"[VAPI] tool={name} args={args}")
+
         try:
-            # -------------------------------------------------
+            # --------------------------
             # list_availability
-            # -------------------------------------------------
+            # --------------------------
             if name == "list_availability":
                 if "provider_id" not in args:
                     err("provider_id is required"); continue
-
-                provider_id = _to_int(args["provider_id"])
+                provider_id = int(args["provider_id"])
                 start_from = args.get("start_from")
 
                 q = db.query(models.Availability).filter(
@@ -142,32 +180,29 @@ async def vapi_tool_calls(
                 } for r in rows]
                 ok({"slots": slots})
 
-            # -------------------------------------------------
+            # --------------------------
             # create_appointment
-            # -------------------------------------------------
+            # --------------------------
             elif name == "create_appointment":
                 required = ["patient_id", "provider_id", "start_at", "end_at", "visit_type"]
                 missing = [k for k in required if k not in args]
                 if missing:
                     err(f"Missing fields: {', '.join(missing)}"); continue
 
-                patient_id  = _to_int(args["patient_id"])
-                provider_id = _to_int(args["provider_id"])
+                patient_id  = int(args["patient_id"])
+                provider_id = int(args["provider_id"])
                 start_at    = _parse_iso(args["start_at"])
                 end_at      = _parse_iso(args["end_at"])
-
-                # Normalize visit_type (accept mixed case)
-                visit_type_raw = str(args.get("visit_type", "telehealth")).lower().strip()
+                vt_raw      = str(args.get("visit_type", "telehealth")).lower().strip()
                 try:
-                    visit_type = models.VisitType(visit_type_raw)
+                    visit_type = models.VisitType(vt_raw)
                 except ValueError:
                     err("visit_type must be 'telehealth' or 'in_person'"); continue
 
                 facility_id = args.get("facility_id")
                 if facility_id is not None:
-                    facility_id = _to_int(facility_id)
+                    facility_id = int(facility_id)
 
-                # Business rules (mirror your /appointments router)
                 if end_at <= start_at:
                     err("end_at must be after start_at"); continue
                 if visit_type == models.VisitType.in_person and facility_id is None:
@@ -175,7 +210,6 @@ async def vapi_tool_calls(
                 if visit_type == models.VisitType.telehealth and facility_id is not None:
                     err("telehealth must not include facility_id"); continue
 
-                # Block if overlaps a confirmed appt for this provider
                 conflict = db.query(models.Appointment).filter(
                     models.Appointment.provider_id == provider_id,
                     models.Appointment.start_at < end_at,
@@ -198,14 +232,7 @@ async def vapi_tool_calls(
                     status=models.ApptStatus.requested,
                     video_url=None,
                 )
-                try:
-                    db.add(appt)
-                    db.commit()
-                except Exception:
-                    db.rollback()
-                    raise
-                db.refresh(appt)
-
+                db.add(appt); db.commit(); db.refresh(appt)
                 ok({
                     "appointment_id": appt.id,
                     "status": appt.status.value,
@@ -214,44 +241,68 @@ async def vapi_tool_calls(
                     "provider_id": appt.provider_id,
                 })
 
-            # -------------------------------------------------
-            # cancel_appointment
-            # -------------------------------------------------
-            elif name == "cancel_appointment":
-                # Require identity: either patient_id OR provider_id, plus appointment_id
-                if "appointment_id" not in args or ("patient_id" not in args and "provider_id" not in args):
-                    err("appointment_id and patient_id or provider_id are required"); continue
-
-                appt_id = _to_int(args["appointment_id"])
+            # --------------------------
+            # update_appointment
+            # --------------------------
+            elif name == "update_appointment":
+                if "appointment_id" not in args:
+                    err("appointment_id is required"); continue
+                appt_id = int(args["appointment_id"])
                 appt = db.get(models.Appointment, appt_id)
                 if not appt:
                     err("Appointment not found", 404); continue
 
-                pid = args.get("patient_id")
-                prvid = args.get("provider_id")
+                data = {}
+                for key in ("start_at","end_at","visit_type","facility_id","location","reason"):
+                    if key in args and args[key] is not None:
+                        data[key] = args[key]
+                if "start_at" in data:
+                    data["start_at"] = _parse_iso(data["start_at"])
+                if "end_at" in data:
+                    data["end_at"] = _parse_iso(data["end_at"])
+                if "visit_type" in data:
+                    try:
+                        data["visit_type"] = models.VisitType(str(data["visit_type"]).lower().strip())
+                    except ValueError:
+                        err("visit_type must be 'telehealth' or 'in_person'"); continue
 
-                if pid is not None and _to_int(pid) != appt.patient_id and prvid is None:
-                    err("Forbidden: appointment does not belong to patient", 403); continue
-                if prvid is not None and _to_int(prvid) != appt.provider_id and pid is None:
-                    err("Forbidden: appointment does not belong to provider", 403); continue
+                new_start = data.get("start_at", appt.start_at)
+                new_end   = data.get("end_at", appt.end_at)
+                if new_end <= new_start:
+                    err("end_at must be after start_at"); continue
+                # Optional: ownership checks here if you want
 
-                try:
-                    appt.status = models.ApptStatus.cancelled
-                    db.commit()
-                except Exception:
-                    db.rollback()
-                    raise
-                db.refresh(appt)
+                for k, v in data.items():
+                    setattr(appt, k, v)
+                db.commit(); db.refresh(appt)
+
+                ok({
+                    "appointment_id": appt.id,
+                    "status": appt.status.value,
+                    "start_at": _iso(appt.start_at),
+                    "end_at": _iso(appt.end_at),
+                })
+
+            # --------------------------
+            # cancel_appointment
+            # --------------------------
+            elif name == "cancel_appointment":
+                if "appointment_id" not in args:
+                    err("appointment_id is required"); continue
+                appt = db.get(models.Appointment, int(args["appointment_id"]))
+                if not appt:
+                    err("Appointment not found", 404); continue
+                appt.status = models.ApptStatus.cancelled
+                db.commit(); db.refresh(appt)
                 ok({"ok": True, "status": appt.status.value})
 
-            # -------------------------------------------------
+            # --------------------------
             # list_my_appointments
-            # -------------------------------------------------
+            # --------------------------
             elif name == "list_my_appointments":
                 if "patient_id" not in args:
                     err("patient_id is required"); continue
-
-                patient_id = _to_int(args["patient_id"])
+                patient_id = int(args["patient_id"])
                 active_only = bool(args.get("active_only", True))
 
                 q = db.query(models.Appointment).filter(
@@ -264,7 +315,6 @@ async def vapi_tool_calls(
                         )
                     )
                 rows = q.order_by(models.Appointment.start_at.asc()).limit(100).all()
-
                 data = [{
                     "id": a.id,
                     "start_at": _iso(a.start_at),
@@ -276,14 +326,12 @@ async def vapi_tool_calls(
                 } for a in rows]
                 ok({"appointments": data})
 
-            # -------------------------------------------------
-            # Unknown tool
-            # -------------------------------------------------
             else:
                 err(f"Unknown tool '{name}'", 404)
 
         except Exception as e:
-            # Don't leak stack traces/PHI; return concise error
             ok({"error": str(e)})
+
+
 
     return {"results": results}
